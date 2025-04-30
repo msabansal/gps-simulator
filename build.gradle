@@ -1,0 +1,89 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.ben-manes.versions' version '0.51.0' // Dependency version checking plugin
+}
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+// Define all dependency versions in one place for easier management
+ext {
+    nettyVersion = '4.1.107.Final'
+    slf4jVersion = '2.0.12'
+    lombokVersion = '1.18.30'
+    junitVersion = '5.10.2'
+    mockitoVersion = '5.10.0'
+    assertjVersion = '3.25.3'
+}
+
+dependencies {
+    implementation "io.netty:netty-all:${nettyVersion}"
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-simple:${slf4jVersion}" // Adding simple SLF4J implementation
+    
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    
+    // JUnit Jupiter API and Engine
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    
+    // Additional JUnit dependencies
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junitVersion}" // For parameterized tests
+    testImplementation "org.junit.platform:junit-platform-launcher:1.10.2"
+    
+    // Mockito for mocking in tests
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+    
+    // AssertJ for fluent assertions
+    testImplementation "org.assertj:assertj-core:${assertjVersion}"
+}
+
+application {
+    mainClass = 'com.example.netty.NettyClient'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Add a task to run the client
+task runClient(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the Netty client'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.netty.NettyClient'
+}
+
+// Add a task to run the GT06 client
+task runGT06Client(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the GT06 protocol client'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.netty.NettyClient'
+    
+    // Define the IMEI number
+    def imei = '123456789012345'
+    
+    // Convert IMEI to hex string (each character converted to its ASCII hex value)
+    def imeiHex = imei.getBytes().collect { String.format("%02X", it) }.join()
+    
+    args = ['--gt06', 'localhost', '5023', imeiHex] // host, port, imei in hex
+    
+    doFirst {
+        println "Running GT06 client with:"
+        println "Original IMEI: ${imei}"
+        println "Hex encoded IMEI: ${imeiHex}"
+    }
+}
